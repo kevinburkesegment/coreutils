@@ -2091,3 +2091,19 @@ fn test_split_directory_already_exists() {
         .no_stdout()
         .stderr_is("split: xaa: Is a directory\n");
 }
+
+/// Test that writing to a full device reports the output filename in the error.
+/// This corresponds to the GNU test `tests/split/split-io-err.sh`.
+#[test]
+#[cfg(target_os = "linux")]
+fn test_split_write_error_reports_filename() {
+    let (at, mut ucmd) = at_and_ucmd!();
+
+    // Symlink xaa to /dev/full so the first output chunk fails with ENOSPC
+    at.symlink_file("/dev/full", "xaa");
+
+    ucmd.args(&["-b", "1"])
+        .pipe_in("12")
+        .fails_with_code(1)
+        .stderr_contains("xaa: No space left on device");
+}
